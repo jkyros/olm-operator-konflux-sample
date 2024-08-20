@@ -1,4 +1,6 @@
-# Based on ./gatekeeper-operator/bundle.Dockerfile
+# TODO(jkyros): It might be more proper to generate this with opm, e.g opm alpha bundle generate --directory ./custom-metrics-autoscaler-operator/keda/2.14.1/manifests/ \ 
+# --package openshift-custom-metrics-autoscaler-operator --channels stable --default stable
+
 FROM registry.access.redhat.com/ubi9/ubi-minimal:latest as builder-runner
 RUN microdnf install -y skopeo jq python3 python3-pip
 RUN pip3 install --upgrade pip && pip3 install ruamel.yaml==0.17.9
@@ -7,10 +9,15 @@ RUN pip3 install --upgrade pip && pip3 install ruamel.yaml==0.17.9
 FROM builder-runner as builder
 
 COPY bundle-hack .
-COPY gatekeeper-operator/bundle/manifests /manifests/
-COPY gatekeeper-operator/bundle/metadata /metadata/
 
+# We're going to copy all the keda bundles in 
+COPY custom-metrics-autoscaler-operator/keda /custom-metrics-autoscaler-operator/keda 
+
+# This is going to sort out the most recent one and put it in /manifests/ and /metadata/ so 
+# the next stage can use it from there 
 RUN ./update_bundle.sh 
+
+RUN rm /manifests/keda.*.clusterserviceversion.yaml
 
 FROM scratch
 
@@ -18,7 +25,7 @@ FROM scratch
 LABEL operators.operatorframework.io.bundle.mediatype.v1=registry+v1
 LABEL operators.operatorframework.io.bundle.manifests.v1=manifests/
 LABEL operators.operatorframework.io.bundle.metadata.v1=metadata/
-LABEL operators.operatorframework.io.bundle.package.v1=gatekeeper-operator
+LABEL operators.operatorframework.io.bundle.package.v1=custom-metrics-autoscaler-operator
 LABEL operators.operatorframework.io.bundle.channels.v1=stable,3.15
 LABEL operators.operatorframework.io.bundle.channel.default.v1=stable
 LABEL operators.operatorframework.io.metrics.builder=operator-sdk-v1.34.1
@@ -26,10 +33,10 @@ LABEL operators.operatorframework.io.metrics.mediatype.v1=metrics+v1
 LABEL operators.operatorframework.io.metrics.project_layout=go.kubebuilder.io/v3
 
 # Labels for testing.
-LABEL operators.operatorframework.io.test.mediatype.v1=scorecard+v1
-LABEL operators.operatorframework.io.test.config.v1=tests/scorecard/
+#LABEL operators.operatorframework.io.test.mediatype.v1=scorecard+v1
+#LABEL operators.operatorframework.io.test.config.v1=tests/scorecard/
 
 # Copy files to locations specified by labels.
 COPY --from=builder /manifests /manifests/
 COPY --from=builder /metadata /metadata/
-COPY gatekeeper-operator/bundle/tests/scorecard /tests/scorecard/
+#COPY gatekeeper-operator/bundle/tests/scorecard /tests/scorecard/
