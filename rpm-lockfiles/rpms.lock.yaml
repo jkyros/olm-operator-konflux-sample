@@ -25,6 +25,13 @@ arches:
     name: rsync
     evr: 3.2.3-19.el9
     sourcerpm: rsync-3.2.3-19.el9.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/aarch64/baseos/os/Packages/t/tzdata-2024a-1.el9.noarch.rpm
+    repoid: ubi-9-baseos-rpms
+    size: 861826
+    checksum: sha256:c72518243033021adf8fd36bd2fc7b1774c341af93bb2686930587ffb73258dc
+    name: tzdata
+    evr: 2024a-1.el9
+    sourcerpm: tzdata-2024a-1.el9.src.rpm
 - arch: x86_64
   packages:
   - url: https://cdn.redhat.com/content/dist/rhel9/9/x86_64/appstream/os/Packages/p/protobuf-3.14.0-13.el9.x86_64.rpm
@@ -48,6 +55,13 @@ arches:
     name: rsync
     evr: 3.2.3-19.el9
     sourcerpm: rsync-3.2.3-19.el9.src.rpm
+  - url: https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi9/9/x86_64/baseos/os/Packages/t/tzdata-2024a-1.el9.noarch.rpm
+    repoid: ubi-9-baseos-rpms
+    size: 861826
+    checksum: sha256:c72518243033021adf8fd36bd2fc7b1774c341af93bb2686930587ffb73258dc
+    name: tzdata
+    evr: 2024a-1.el9
+    sourcerpm: tzdata-2024a-1.el9.src.rpm
   source: []
   module_metadata: []
 
