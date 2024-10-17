@@ -180,14 +180,22 @@ spec:
       runAfter:
       - clone-repository
       taskRef:
+      #  params:
+      #  - name: name
+      #    value: prefetch-dependencies-oci-ta
+      #  - name: bundle
+      #    value: quay.io/konflux-ci/tekton-catalog/task-prefetch-dependencies-oci-ta:0.1@sha256:621b13ab4a01a366a2b1d8403cf06b2b7418afd926d13678c4432858514407d3
+      #  - name: kind
+      #    value: task
+      #  resolver: bundles
+        resolver: git
         params:
-        - name: name
-          value: prefetch-dependencies-oci-ta
-        - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-prefetch-dependencies-oci-ta:0.1@sha256:621b13ab4a01a366a2b1d8403cf06b2b7418afd926d13678c4432858514407d3
-        - name: kind
-          value: task
-        resolver: bundles
+        - name: url
+          value: https://github.com/brianwcook/build-definitions.git
+        - name: revision
+          value: STONEBLD-2618
+        - name: pathInRepo
+          value: task/prefetch-dependencies-oci-ta/0.1/prefetch-dependencies-oci-ta.yaml
       workspaces:
       - name: git-basic-auth
         workspace: git-auth
