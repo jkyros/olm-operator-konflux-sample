@@ -181,11 +181,11 @@ spec:
       - clone-repository
       taskRef:
         # params:
-        #- name: name
+        # - name: name
         #  value: prefetch-dependencies-oci-ta
-        #- name: bundle
+        # - name: bundle
         #  value: quay.io/konflux-ci/tekton-catalog/task-prefetch-dependencies-oci-ta:0.1@sha256:621b13ab4a01a366a2b1d8403cf06b2b7418afd926d13678c4432858514407d3
-        #- name: kind
+        # - name: kind
         #  value: task
         # resolver: bundles
         resolver: git
