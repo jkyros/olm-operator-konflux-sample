@@ -8,7 +8,7 @@ metadata:
     build.appstudio.openshift.io/build-nudge-files: "bundle-hack/imagerefs/custom-metrics-autoscaler-operator.pullspec"
     pipelinesascode.tekton.dev/max-keep-runs: "3"
     pipelinesascode.tekton.dev/on-cel-expression: event == "push" && target_branch
-      == "cma-konflux" && ( "custom-metrics-autoscaler-operator".pathChanged()  || "Dockerfile.cma-operator".pathChanged() )
+      == "cma-konflux" && ( "custom-metrics-autoscaler-operator".pathChanged()  || "Dockerfile.cma-operator".pathChanged() || ".tekton/custom-metrics-autoscaler-operator-push.yaml".pathChanged() )
   creationTimestamp: null
   labels:
     appstudio.openshift.io/application: custom-metrics-autoscaler-operator

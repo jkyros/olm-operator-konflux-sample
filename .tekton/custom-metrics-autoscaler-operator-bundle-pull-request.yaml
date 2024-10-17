@@ -8,7 +8,7 @@ metadata:
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "3"
     pipelinesascode.tekton.dev/on-cel-expression: event == "pull_request" && target_branch
-      == "cma-konflux" && ( "bundle-hack/update_bundle.sh".pathChanged()  || "Dockerfile.cma-operator-bundle".pathChanged() || "bundle-hack/imagerefs/keda-operator.pullspec".pathChanged() || "bundle-hack/imagerefs/keda-webhooks.pullspec".pathChanged() || "bundle-hack/imagerefs/keda-adapter.pullspec".pathChanged() )
+      == "cma-konflux" && ( "bundle-hack/update_bundle.sh".pathChanged()  || "Dockerfile.cma-operator-bundle".pathChanged() || "bundle-hack/imagerefs/keda-operator.pullspec".pathChanged() || "bundle-hack/imagerefs/keda-webhooks.pullspec".pathChanged() || "bundle-hack/imagerefs/keda-adapter.pullspec".pathChanged() ||  ".tekton/custom-metrics-autoscaler-bundle-pull-request.yaml".pathChanged()  )
   creationTimestamp: null
   labels:
     appstudio.openshift.io/application: custom-metrics-autoscaler-operator

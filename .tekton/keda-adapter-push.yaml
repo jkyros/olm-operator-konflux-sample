@@ -8,7 +8,7 @@ metadata:
     build.appstudio.openshift.io/build-nudge-files: "bundle-hack/imagerefs/keda-adapter.pullspec"
     pipelinesascode.tekton.dev/max-keep-runs: "3"
     pipelinesascode.tekton.dev/on-cel-expression: event == "push" && target_branch
-      == "cma-konflux" && ( "kedacore-keda".pathChanged() || "Dockerfile.keda-adapter".pathChanged() )
+      == "cma-konflux" && ( "kedacore-keda".pathChanged() || "Dockerfile.keda-adapter".pathChanged() || ".tekton/keda-adapter-push.yaml".pathChanged() )
   creationTimestamp: null
   labels:
     appstudio.openshift.io/application: custom-metrics-autoscaler-operator
