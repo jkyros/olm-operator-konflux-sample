@@ -62,7 +62,7 @@ WORKDIR /
 # all the repos (the RHEL ones) and then enable the ubi repos.
 # RUN microdnf --disablerepo=* --enablerepo=ubi-9-baseos-rpms --enablerepo=ubi-9-appstream-rpms reinstall -y tzdata
 # TODO(jkyros): If cachi2 caches it, it "just works", we probably need a check though so we can still build this locally
-RUN microdnf reinstall -y tzdata
+RUN microdnf reinstall -y tzdata &&  microdnf clean all
 COPY --from=builder /src/bin/keda-admission-webhooks /usr/bin/
 RUN ln -s /usr/bin/keda-admission-webhooks /keda-admission-webhooks
 
