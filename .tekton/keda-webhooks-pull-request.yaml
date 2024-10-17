@@ -191,11 +191,11 @@ spec:
       - clone-repository
       taskRef:
         # params:
-        #- name: name
+        # - name: name
         #  value: prefetch-dependencies-oci-ta
-        #- name: bundle
+        # - name: bundle
         #  value: quay.io/konflux-ci/tekton-catalog/task-prefetch-dependencies-oci-ta:0.1@sha256:621b13ab4a01a366a2b1d8403cf06b2b7418afd926d13678c4432858514407d3
-        #- name: kind
+        # - name: kind
         #  value: task
         # resolver: bundles
         # TODO(jkyros): there isn't a way to inject the certificates in the existing prefetch-dependencies step, I just want to see if
@@ -249,22 +249,14 @@ spec:
       runAfter:
       - prefetch-dependencies
       taskRef:
-        #params:
-        #- name: name
-        #  value: buildah-remote-oci-ta
-        #- name: bundle
-        #  value: quay.io/konflux-ci/tekton-catalog/task-buildah-remote-oci-ta:0.2@sha256:7e39d1eca718d714339aa03eb61907d6edc37a93e0ff40e3415f4038d242c078
-        #- name: kind
-        #  value: task
-        # resolver: bundles
-        resolver: git
         params:
-        - name: url
-          value: https://github.com/jkyros/build-definitions.git
-        - name: revision
-          value: PODAUTO-239
-        - name: pathInRepo
-          value: task/prefetch-dependencies-oci-ta/0.1/prefetch-dependencies-oci-ta.yaml
+        - name: name
+          value: buildah-remote-oci-ta
+        - name: bundle
+          value: quay.io/konflux-ci/tekton-catalog/task-buildah-remote-oci-ta:0.2@sha256:7e39d1eca718d714339aa03eb61907d6edc37a93e0ff40e3415f4038d242c078
+        - name: kind
+          value: task
+        resolver: bundles
       when:
       - input: $(tasks.init.results.build)
         operator: in
