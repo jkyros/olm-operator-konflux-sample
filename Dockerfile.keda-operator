@@ -20,20 +20,24 @@ ARG TARGETARCH
 # The KEDA makefiles need this to get the right platform
 ENV ARCH=${TARGETARCH}
 
-# John added this
+# Register using our activation keys, download the packages, unregister. This will use cachi2 if we prefetched.
+# This is okay to do in a build phase, because the certs don't end up in the final image, this container gets thrown away, but DO NOT do this
+# in the final image, it doesn't clean up after itself completely.
 
-# TODO(jkyros): entirlements are always a clown show for some reason, if you don't do this, you get
-# cert errors because it's looking at rhsm-host and not rhsm and won't find the cert
-RUN rm -rf /etc/rhsm-host && ln -s /etc/rhsm /etc/rhsm-host
 
-# TODO(jkyros): pin this to cache when we are able
-# protobuf-compiler lives in the codeready channel, which is an entitled channel, so we have to enable it, but
-# the channels do not match the targetarch names, so we have to translate before we entble it
-RUN if [ ${ARCH} == "arm64" ] ; then ARCH="aarch64"; \
-    elif [ ${ARCH} == "amd64" ]; then ARCH="x86_64"; \
-    fi; \
-    dnf install --enablerepo=codeready-builder-for-rhel-9-${ARCH}-rpms -y protobuf-compiler --forcearch ${ARCH}
+#RUN if [ ${ARCH} == "arm64" ] ; then ARCH="aarch64"; \
+#    elif [ ${ARCH} == "amd64" ]; then ARCH="x86_64"; \
+#    elif [ ${ARCH} == "s390x" ]; then ARCH="s390x"; \
+#    elif [ ${ARCH} == "ppc64le" ]; then ARCH="ppc64le"; \
+#    fi; \
+#    export SMDEV_CONTAINER_OFF=1 && \
+#    subscription-manager register --org $(cat "/activation-key/orgid") --activationkey $(cat "/activation-key/activationkey") && \
+#    subscription-manager repos --enable codeready-builder-for-rhel-9-${ARCH}-rpms && \
+#    dnf install -y protobuf-compiler && \
+#    subscription-manager unregister
 
+# TODO(jkyros): if cachi2 did its job, I don't have to register, right?
+RUN dnf install -y protobuf-compiler
 
 # Get the sources in here
 COPY /kedacore-keda/ /src/
@@ -56,7 +60,8 @@ FROM registry.redhat.io/ubi9/ubi-minimal:latest
 WORKDIR /
 # TODO(jkyros): It will try to pull from the RHEL channels because of the entitlement secret, so we have to disable
 # all the repos (the RHEL ones) and then enable the ubi repos.
-RUN microdnf --disablerepo=* --enablerepo=ubi-9-baseos-rpms --enablerepo=ubi-9-appstream-rpms reinstall -y tzdata
+# RUN microdnf --disablerepo=* --enablerepo=ubi-9-baseos-rpms --enablerepo=ubi-9-appstream-rpms reinstall -y tzdata
+RUN microdnf reinstall -y tzdata &&  microdnf clean all
 COPY --from=builder /src/bin/keda /usr/bin/
 RUN ln -s /usr/bin/keda /keda
 
@@ -87,7 +92,9 @@ LABEL com.redhat.openshift.versions="v4.17"
 
 # Chore: this will get used in the release policy, so update this when our version we're releasing changes
 LABEL version="2.14.1"
-LABEL release=""
+# I don't know that we can auto-increment this without an additional pipeline stage or something, but if we omit it,
+# we fail the metadata requirements, so we have to put _something_ here
+LABEL release="1"
 
 
 ENTRYPOINT ["/usr/bin/keda", "--zap-log-level=info", "--zap-encoder=console"]
