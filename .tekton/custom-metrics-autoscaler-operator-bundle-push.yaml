@@ -8,7 +8,7 @@ metadata:
     build.appstudio.openshift.io/build-nudge-files: "bundle-hack/imagerefs/custom-metrics-autoscaler-operator-bundle.pullspec"
     pipelinesascode.tekton.dev/max-keep-runs: "3"
     pipelinesascode.tekton.dev/on-cel-expression: event == "push" && target_branch
-      == "cma-konflux" && ( "bundle-hack/update_bundle.sh".pathChanged()  || "Dockerfile.cma-operator-bundle".pathChanged() || "bundle-hack/imagerefs/keda-operator.pullspec".pathChanged() || "bundle-hack/imagerefs/keda-webhooks.pullspec".pathChanged() || "bundle-hack/imagerefs/keda-adapter.pullspec".pathChanged() || "bundle-hack/imagerefs/custom-metrics-autoscaler-operator.pullspec".pathChanged() )
+      == "cma-konflux" && ( "bundle-hack/update_bundle.sh".pathChanged()  || "Dockerfile.cma-operator-bundle".pathChanged() || "bundle-hack/imagerefs/keda-operator.pullspec".pathChanged() || "bundle-hack/imagerefs/keda-webhooks.pullspec".pathChanged() || "bundle-hack/imagerefs/keda-adapter.pullspec".pathChanged() || "bundle-hack/imagerefs/custom-metrics-autoscaler-operator.pullspec".pathChanged() ||  ".tekton/custom-metrics-autoscaler-operator-push.yaml".pathChanged()  )
   creationTimestamp: null
   labels:
     appstudio.openshift.io/application: custom-metrics-autoscaler-operator
@@ -92,11 +92,11 @@ spec:
       description: Skip checks against built image
       name: skip-checks
       type: string
-    - default: "false"
+    - default: "true"
       description: Execute the build with network isolation
       name: hermetic
       type: string
-    - default: ""
+    - default: '[{"type": "gomod", "path": "kedacore-keda/"},{"type": "gomod", "path": "kedacore-keda/hack/tooldeps/"},{"type": "gomod", "path": "tools/mock/"},{"type": "gomod", "path": "tools/controller-tools/"},{"type": "rpm","path":"rpm-lockfiles/","options": { "ssl" : { "client_cert": "/certificates/client.crt","client_key":"/certificates/client.key","ca_bundle":"/certificates/CA.crt"}}}]'
       description: Build dependencies to be prefetched by Cachi2
       name: prefetch-input
       type: string
@@ -187,17 +187,33 @@ spec:
         value: $(params.prefetch-input)
       - name: dev-package-managers
         value: "true"
+        # We need the CA cert otherwise we'll get SSL errors, but this
+        # really should be handled by subscription manager/cachi2 somehow probably
+      - name: caTrustConfigMapName
+        value: "prefetch-entitled-ca-bundle"
+      - name: caTrustConfigMapKey
+        value: "redhat-uep.pem"
+      - name: log-level
+        value: DEBUG
       runAfter:
       - clone-repository
       taskRef:
+       # params:
+       # - name: name
+       #   value: prefetch-dependencies
+       # - name: bundle
+       #   value: quay.io/konflux-ci/tekton-catalog/task-prefetch-dependencies:0.1@sha256:fe7234e3824d1e65d6a7aac352e7a6bbce623d90d8d7da9aceeee108ad2c61be
+       # - name: kind
+       #   value: task
+       # resolver: bundles
+        resolver: git
         params:
-        - name: name
-          value: prefetch-dependencies
-        - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-prefetch-dependencies:0.1@sha256:fe7234e3824d1e65d6a7aac352e7a6bbce623d90d8d7da9aceeee108ad2c61be
-        - name: kind
-          value: task
-        resolver: bundles
+        - name: url
+          value: https://github.com/jkyros/build-definitions.git
+        - name: revision
+          value: PODAUTO-239
+        - name: pathInRepo
+          value: task/prefetch-dependencies-oci-ta/0.1/prefetch-dependencies-oci-ta.yaml
       when:
       - input: $(params.prefetch-input)
         operator: notin

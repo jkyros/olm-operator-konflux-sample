@@ -14,7 +14,7 @@ ENV GOTOOLCHAIN=local
 ARG TARGETOS
 ARG TARGETARCH
 
-# The CMA makefile wants "ARCH", and will default to amd64 if not specified, 
+# The CMA makefile wants "ARCH", and will default to amd64 if not specified
 # so we give it ARCH so we don't accidentally build an amd64 binary in our arm64 container
 ENV ARCH=${TARGETARCH}
 
@@ -47,13 +47,21 @@ LABEL stage=operator
 
 
 # install required tools for must-gather collection script
+#RUN INSTALL_PKGS=" \
+#    rsync \
+#      tar \
+#      " && \
+#    microdnf --disablerepo=* --enablerepo=ubi-9-baseos-rpms --enablerepo=ubi-9-appstream-rpms install -y $INSTALL_PKGS && \
+#    rpm -V $INSTALL_PKGS && \
+#    microdnf clean all
+# TODO(jkyros): We also need 'tar' but tar is already part of the UBI image right now. I'll add it back in once 
+# we get the caching right, but for now it's a "reinstall" package
 RUN INSTALL_PKGS=" \
-      rsync \
-      tar \
-      " && \
-    microdnf --disablerepo=* --enablerepo=ubi-9-baseos-rpms --enablerepo=ubi-9-appstream-rpms install -y $INSTALL_PKGS && \
-    rpm -V $INSTALL_PKGS && \
-    microdnf clean all
+    rsync \
+     " && \
+   microdnf install -y $INSTALL_PKGS && \
+   rpm -V $INSTALL_PKGS && \
+   microdnf clean all
 
 WORKDIR /
 COPY --from=builder /src/resources/*.yaml /resources/
@@ -99,7 +107,9 @@ LABEL com.redhat.openshift.versions="v4.17"
 
 # Chore: this will get used in the release policy, so update this when our version we're releasing changes
 LABEL version="2.14.1"
-LABEL release=""
+# I don't know that we can auto-increment this without an additional pipeline stage or something, but if we omit it,
+# we fail the metadata requirements, so we have to put _something_ here
+LABEL release="1"
 
 CMD ["/usr/bin/manager"]
 

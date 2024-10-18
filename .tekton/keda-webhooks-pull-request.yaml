@@ -8,7 +8,7 @@ metadata:
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
     pipelinesascode.tekton.dev/max-keep-runs: "3"
     pipelinesascode.tekton.dev/on-cel-expression: event == "pull_request" && target_branch
-      == "cma-konflux" && ("kedacore-keda".pathChanged() || "Dockerfile.keda-webhooks".pathChanged() )
+      == "cma-konflux" && ("kedacore-keda".pathChanged() || "Dockerfile.keda-webhooks".pathChanged() || ".tekton/keda-webhooks-pull-request.yaml".pathChanged() )
   creationTimestamp: null
   labels:
     appstudio.openshift.io/application: custom-metrics-autoscaler-operator
@@ -76,7 +76,7 @@ spec:
       description: Execute the build with network isolation
       name: hermetic
       type: string
-    - default: '{"type": "gomod", "path": ".","type": "gomod", "path": "kedacore-keda/hack/tooldeps/","type": "rpm","path":"rpm-lockfiles/"}'
+    - default: '[{"type": "gomod", "path": "kedacore-keda/"},{"type": "gomod", "path": "kedacore-keda/hack/tooldeps/"},{"type": "gomod", "path": "tools/mock/"},{"type": "gomod", "path": "tools/controller-tools/"},{"type": "rpm","path":"rpm-lockfiles/","options": { "ssl" : { "client_cert": "/certificates/client.crt","client_key":"/certificates/client.key","ca_bundle":"/certificates/CA.crt"}}}]'
       description: Build dependencies to be prefetched by Cachi2
       name: prefetch-input
       type: string
@@ -179,17 +179,36 @@ spec:
         value: $(params.image-expires-after)
       - name: dev-package-managers
         value: "true"
+        # We need the CA cert otherwise we'll get SSL errors, but this
+        # really should be handled by subscription manager/cachi2 somehow probably
+      - name: caTrustConfigMapName
+        value: "prefetch-entitled-ca-bundle"
+      - name: caTrustConfigMapKey
+        value: "redhat-uep.pem"
+      - name: log-level
+        value: DEBUG
       runAfter:
       - clone-repository
       taskRef:
+        # params:
+        # - name: name
+        #  value: prefetch-dependencies-oci-ta
+        # - name: bundle
+        #  value: quay.io/konflux-ci/tekton-catalog/task-prefetch-dependencies-oci-ta:0.1@sha256:621b13ab4a01a366a2b1d8403cf06b2b7418afd926d13678c4432858514407d3
+        # - name: kind
+        #  value: task
+        # resolver: bundles
+        # TODO(jkyros): there isn't a way to inject the certificates in the existing prefetch-dependencies step, I just want to see if
+        # their proposed way works for us so we can get ahead of it if we need to. I presume something elsewhere in the system checks to see if the stages
+        # we used are "signed" or whatever, so I doubt this will work for production
+        resolver: git
         params:
-        - name: name
-          value: prefetch-dependencies-oci-ta
-        - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-prefetch-dependencies-oci-ta:0.1@sha256:621b13ab4a01a366a2b1d8403cf06b2b7418afd926d13678c4432858514407d3
-        - name: kind
-          value: task
-        resolver: bundles
+        - name: url
+          value: https://github.com/jkyros/build-definitions.git
+        - name: revision
+          value: PODAUTO-239
+        - name: pathInRepo
+          value: task/prefetch-dependencies-oci-ta/0.1/prefetch-dependencies-oci-ta.yaml
       workspaces:
       - name: git-basic-auth
         workspace: git-auth
