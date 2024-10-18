@@ -1,3 +1,15 @@
 exclude:
   global:
     - "tools/**"
+# TODO(jkyros): I think it's reading the nested .snyk files from the modules, otherwise it would have 
+# flagged all our tests. 
+ignore:
+  go/HardcodedPassword:
+    - 'kedacore-keda/pkg/scalers/solace_scaler.go':
+      reason: This is not a hardcoded password, it's a default value"
+  go/InsecureHash:
+    - 'custom-metrics-autoscaler-operator/controllers/keda/util/util.go':
+      reason: This is not a password hash, this is a checksum
+  go/PT:
+    - 'source/kedacore-keda/pkg/util/certificates.go':
+      reason: This gets saniitized for path traversal a few lines above before it gets reassigned
