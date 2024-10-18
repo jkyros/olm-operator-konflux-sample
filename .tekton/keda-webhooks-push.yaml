@@ -177,6 +177,14 @@ spec:
         value: $(params.image-expires-after)
       - name: dev-package-managers
         value: "true"
+        # We need the CA cert otherwise we'll get SSL errors, but this
+        # really should be handled by subscription manager/cachi2 somehow probably
+      - name: caTrustConfigMapName
+        value: "prefetch-entitled-ca-bundle"
+      - name: caTrustConfigMapKey
+        value: "redhat-uep.pem"
+      - name: log-level
+        value: DEBUG
       runAfter:
       - clone-repository
       taskRef:
@@ -194,9 +202,9 @@ spec:
         resolver: git
         params:
         - name: url
-          value: https://github.com/brianwcook/build-definitions.git
+          value: https://github.com/jkyros/build-definitions.git
         - name: revision
-          value: STONEBLD-2618
+          value: PODAUTO-239
         - name: pathInRepo
           value: task/prefetch-dependencies-oci-ta/0.1/prefetch-dependencies-oci-ta.yaml
       workspaces:

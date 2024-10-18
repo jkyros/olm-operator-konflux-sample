@@ -54,9 +54,10 @@ LABEL stage=operator
 #    microdnf --disablerepo=* --enablerepo=ubi-9-baseos-rpms --enablerepo=ubi-9-appstream-rpms install -y $INSTALL_PKGS && \
 #    rpm -V $INSTALL_PKGS && \
 #    microdnf clean all
+# TODO(jkyros): We also need 'tar' but tar is already part of the UBI image right now. I'll add it back in once 
+# we get the caching right, but for now it's a "reinstall" package
 RUN INSTALL_PKGS=" \
     rsync \
-     tar \
      " && \
    microdnf install -y $INSTALL_PKGS && \
    rpm -V $INSTALL_PKGS && \

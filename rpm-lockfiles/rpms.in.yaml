@@ -1,0 +1,17 @@
+reinstallPackages: 
+  - tzdata
+packages: 
+  - python3-pip
+  - python3-ruamel-yaml
+  - rsync
+  - skopeo
+  - tar
+  - jq
+contentOrigin:
+  repofiles:
+    - ./ubi9.repo
+arches: 
+  - aarch64
+  - x86_64
+  - s390x
+  - ppc64le
