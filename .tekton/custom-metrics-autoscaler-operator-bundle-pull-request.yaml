@@ -349,6 +349,8 @@ spec:
         value: $(tasks.build-container.results.IMAGE_DIGEST)
       - name: image-url
         value: $(tasks.build-container.results.IMAGE_URL)
+      - name: ARGS
+        value: "--report --project-name=custom-metrics-autoscaler-operator"
       runAfter:
       - build-container
       taskRef:
