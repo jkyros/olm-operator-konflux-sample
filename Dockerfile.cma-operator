@@ -39,7 +39,9 @@ RUN find controllers && find resources
 
 RUN make build
 
-FROM registry.redhat.io/openshift4/ose-cli:latest AS cli
+# TODO(jkyros): if we bump RHEL versions, we're going to have to bump this, the one 
+# without the -rhel9 suffix is the rhel8 version and it's ancient and full of CVEs
+FROM registry.redhat.io/openshift4/ose-cli-rhel9:latest AS cli
 
 
 FROM registry.access.redhat.com/ubi9/ubi-minimal:latest
@@ -62,8 +64,8 @@ RUN ln -s /usr/bin/manager /manager
 
 # This is also part of the gather script requirements
 COPY --from=builder /src/must-gather/collection-scripts/* /usr/bin/
-# TODO(jkyros): for Konflux testing I'm removing this because it has a ton of critical CVEs right now, but I'll put it back
-# COPY --from=cli /usr/bin/oc /usr/bin
+# TODO(jkyros): if this continues to be CVE-laden, we might have to find a pre-release brew version to pull
+COPY --from=cli /usr/bin/oc /usr/bin
 RUN ln -s /usr/bin/oc /usr/bin/kubectl
 
 # TODO(jkyros): This seems weird, why do we do this?
