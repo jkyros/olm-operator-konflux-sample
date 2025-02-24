@@ -6,13 +6,14 @@ metadata:
     build.appstudio.redhat.com/commit_sha: '{{revision}}'
     build.appstudio.redhat.com/pull_request_number: '{{pull_request_number}}'
     build.appstudio.redhat.com/target_branch: '{{target_branch}}'
+    pipelinesascode.tekton.dev/cancel-in-progress: "true"
     pipelinesascode.tekton.dev/max-keep-runs: "3"
-    pipelinesascode.tekton.dev/on-cel-expression: event == "pull_request" && target_branch == "cma-konflux"
-      && ( "catalogs/fbc-stage/catalog/***".pathChanged() || ".tekton/cma-fbc-stage-4-17-pull-request.yaml".pathChanged()
-           || "catalogs/fbc-stage/Containerfile.catalog-4-17".pathChanged() )
+    pipelinesascode.tekton.dev/on-cel-expression: event == "pull_request" && target_branch
+      == "cma-konflux" && ( "catalogs/fbc-stage/***".pathChanged() || ".tekton/cma-fbc-stage-4-17-pull-request.yaml".pathChanged()
+      || "catalogs/fbc-stage/Containerfile.catalog-4-17".pathChanged() )
   creationTimestamp: null
   labels:
-    appstudio.openshift.io/application: cma-fbc-stage
+    appstudio.openshift.io/application: cma-fbc-stage-4-17
     appstudio.openshift.io/component: cma-fbc-stage-4-17
     pipelines.appstudio.openshift.io/type: build
   name: cma-fbc-stage-4-17-on-pull-request
@@ -27,14 +28,13 @@ spec:
     value: quay.io/redhat-user-workloads/cma-podauto-tenant/cma-fbc-stage-4-17:on-pr-{{revision}}
   - name: image-expires-after
     value: 5d
+  - name: build-platforms
+    value:
+    - linux/x86_64
   - name: dockerfile
     value: catalogs/fbc-stage/Containerfile.catalog-4-17
   - name: path-context
     value: catalogs/fbc-stage
-  - name: build-platforms
-    value:
-      - linux/x86_64
-      - linux/arm64
   pipelineSpec:
     description: |
       This pipeline is ideal for building and verifying [file-based catalogs](https://konflux-ci.dev/docs/advanced-how-tos/building-olm.adoc#building-the-file-based-catalog).
@@ -104,9 +104,16 @@ spec:
       description: Add built image into an OCI image index
       name: build-image-index
       type: string
+    - default: []
+      description: Array of --build-arg values ("arg=value" strings) for buildah
+      name: build-args
+      type: array
+    - default: ""
+      description: Path to a file with build arguments for buildah, see https://www.mankier.com/1/buildah-build#--build-arg-file
+      name: build-args-file
+      type: string
     - default:
       - linux/x86_64
-      - linux/arm64
       description: List of platforms to build the container images on. The available
         set of values is determined by the configuration of the multi-platform-controller.
       name: build-platforms
@@ -181,8 +188,6 @@ spec:
         value: $(params.output-image).prefetch
       - name: ociArtifactExpiresAfter
         value: $(params.image-expires-after)
-      - name: dev-package-managers
-        value: "true"
       runAfter:
       - clone-repository
       taskRef:
@@ -214,12 +219,21 @@ spec:
         value: $(params.path-context)
       - name: HERMETIC
         value: $(params.hermetic)
+      - name: PREFETCH_INPUT
+        value: $(params.prefetch-input)
       - name: IMAGE_EXPIRES_AFTER
         value: $(params.image-expires-after)
       - name: COMMIT_SHA
         value: $(tasks.clone-repository.results.commit)
+      - name: BUILD_ARGS
+        value:
+        - $(params.build-args[*])
+      - name: BUILD_ARGS_FILE
+        value: $(params.build-args-file)
       - name: SOURCE_ARTIFACT
-        value: $(tasks.clone-repository.results.SOURCE_ARTIFACT)
+        value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
+      - name: CACHI2_ARTIFACT
+        value: $(tasks.prefetch-dependencies.results.CACHI2_ARTIFACT)
       - name: IMAGE_APPEND_PLATFORM
         value: "true"
       runAfter:
@@ -229,7 +243,7 @@ spec:
         - name: name
           value: buildah-remote-oci-ta
         - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-buildah-remote-oci-ta:0.4@sha256:68a4491169a193c1ae92cbf78cc6ff4ba57b8aeffc48846da09c5cc674a1a7fe
+          value: quay.io/konflux-ci/tekton-catalog/task-buildah-remote-oci-ta:0.4@sha256:a3f3a4db0c4a73007178b0a4fc905ef83d2e69e24a680498a7aeb3d24ec5d167
         - name: kind
           value: task
         resolver: bundles
@@ -267,30 +281,6 @@ spec:
         operator: in
         values:
         - "true"
-    - name: fbc-fips-check-oci-ta
-      params:
-      - name: image-digest
-        value: $(tasks.build-image-index.results.IMAGE_DIGEST)
-      - name: image-url
-        value: $(tasks.build-image-index.results.IMAGE_URL)
-      - name: SOURCE_ARTIFACT
-        value: $(tasks.prefetch-dependencies.results.SOURCE_ARTIFACT)
-      runAfter:
-      - build-image-index
-      taskRef:
-        params:
-        - name: name
-          value: fbc-fips-check-oci-ta
-        - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-fbc-fips-check-oci-ta:0.1@sha256:2e6900f5755fca70f8eebfcf004f39dd9adf6b488c8828f35a1b24862a9f81cf
-        - name: kind
-          value: task
-        resolver: bundles
-      when:
-      - input: $(params.skip-checks)
-        operator: in
-        values:
-        - "false"
     - name: deprecated-base-image-check
       params:
       - name: IMAGE_URL
@@ -341,7 +331,33 @@ spec:
         - name: name
           value: validate-fbc
         - name: bundle
-          value: quay.io/konflux-ci/tekton-catalog/task-validate-fbc:0.1
+          value: quay.io/konflux-ci/tekton-catalog/task-validate-fbc:0.1@sha256:3baeae319c49f6b0c35bd96405f716e89a3c33eb222825509d5fda4fbf3c9837
+        - name: kind
+          value: task
+        resolver: bundles
+      when:
+      - input: $(params.skip-checks)
+        operator: in
+        values:
+        - "false"
+    - name: fbc-target-index-pruning-check
+      params:
+      - name: IMAGE_URL
+        value: $(tasks.build-image-index.results.IMAGE_URL)
+      - name: IMAGE_DIGEST
+        value: $(tasks.build-image-index.results.IMAGE_DIGEST)
+      - name: TARGET_INDEX
+        value: registry.redhat.io/redhat/redhat-operator-index
+      - name: RENDERED_CATALOG_DIGEST
+        value: $(tasks.validate-fbc.results.RENDERED_CATALOG_DIGEST)
+      runAfter:
+      - validate-fbc
+      taskRef:
+        params:
+        - name: name
+          value: fbc-target-index-pruning-check
+        - name: bundle
+          value: quay.io/konflux-ci/tekton-catalog/task-fbc-target-index-pruning-check:0.1@sha256:299c44a5d6930f7a2c878f20853c705f155231cae36d9f37add4cdb7e75e2e12
         - name: kind
           value: task
         resolver: bundles
@@ -351,24 +367,12 @@ spec:
         values:
         - "false"
     workspaces:
-    - name: workspace
     - name: git-auth
       optional: true
     - name: netrc
       optional: true
   taskRunTemplate: {}
   workspaces:
-  - name: workspace
-    volumeClaimTemplate:
-      metadata:
-        creationTimestamp: null
-      spec:
-        accessModes:
-        - ReadWriteOnce
-        resources:
-          requests:
-            storage: 1Gi
-      status: {}
   - name: git-auth
     secret:
       secretName: '{{ git_auth_secret }}'
