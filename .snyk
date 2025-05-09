@@ -4,8 +4,3 @@
 exclude:
   global:
     - "tools/**"
-    # TODO(jkyros): These all contain false positives, and I really really want to ignore
-    # just that lien of the false positive but it doesn't seem like there is a way to do that from here
-    - "*custom-metrics-autoscaler-operator/controllers/keda/util/util.go"
-    - "*kedacore-keda/pkg/scalers/solace_scaler.go"
-    - "*kedacore-keda/pkg/util/certificates.go"
