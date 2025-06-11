@@ -1,3 +1,5 @@
+# This is a dummy comment to trigger builds
+
 #TODO(jkyros): There is something wrong with repo cert trust between the published RPM repos and the builder
 # It's a builder though, so I dunno if I really care 
 FROM brew.registry.redhat.io/rh-osbs/openshift-golang-builder:rhel_9_1.23 as builder
